@@ -17,8 +17,10 @@ module RailsAdmin
       scope = model_config.scope
       auth_scope = @authorization_adapter&.query(auth_scope_key, model_config.abstract_model)
       scope = scope.merge(auth_scope) if auth_scope
-      scope = scope.instance_eval(&additional_scope) if additional_scope
-      get_collection(model_config, scope, pagination)
+      scope = get_collection(model_config, scope, pagination)
+      # Last, so that a reorder in associated_collection_scope survives the list's
+      # own sort, which is a reorder too.
+      additional_scope ? scope.instance_eval(&additional_scope) : scope
     end
 
   private
