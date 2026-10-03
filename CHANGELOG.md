@@ -16,7 +16,9 @@
 
 ### Removed
 
+- The `nested_form` runtime dependency, archived since 2021 ([#3723](https://github.com/railsadminteam/rails_admin/issues/3723))
 - [BREAKING CHANGE] `after_nested_form_callbacks`, `window.nestedFormEvents`, the `data-blueprint` / `data-blueprint-id` attributes and the `#<association>_fields_blueprint` elements ([#3723](https://github.com/railsadminteam/rails_admin/issues/3723))
+- The `remove_nested_one_fields` class, which nothing has generated since the has_one remove button was reworked, along with the click handler and the styles that were still waiting for it ([#3723](https://github.com/railsadminteam/rails_admin/issues/3723))
 
 ### Fixed
 
