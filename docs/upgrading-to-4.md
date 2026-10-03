@@ -32,6 +32,29 @@ The `app/assets/{stylesheets,javascripts}/rails_admin/custom/*` override files a
 
 This works under every `asset_source`. For Sass-level changes (Bootstrap variables, extra `@import`s), use `:external` and edit the generated `rails_admin.scss`. See [Theming and customization](theming-and-customization.md).
 
+## Nested forms no longer use `nested_form`
+
+The [`nested_form`](https://github.com/ryanb/nested_form) gem, archived since 2021, is gone. Nested associations work the same way from the configuration side — `nested_form false`, the `nested` section and `inline_add` are all unchanged — but the markup and the JavaScript hooks around them changed.
+
+A nested association now renders an inert `<template>` inside its own control group. The page-global `<div id="<association>_fields_blueprint" data-blueprint="…">` elements emitted after the form, and the `data-blueprint-id` attribute on the add link, are gone, as is `after_nested_form_callbacks`.
+
+- **If you override `_form_nested_many` or `_form_nested_one`**, replace `form.fields_for` with `form.nested_fields_for field`, which also renders the template. `form.link_to_add` and `nested.link_to_remove` still work but are deprecated: use `form.nested_add_button` and `nested.remove_button`, which take the same arguments. Gate the add button on `form.nested_add_allowed?(field)` rather than `field.inline_add`, and the remove button on `nested.object.new_record?` rather than comparing `nested.options[:child_index]` against `"new_#{field.name}"`.
+- **Both controls are now `<button type="button">`** rather than `<a href="javascript:void(0)">`, so no Content Security Policy has to admit a `javascript:` URL. CSS or JavaScript matching `a.add_nested_fields` or `a.remove_nested_fields` needs the `a` dropped; the class names themselves are unchanged, as are `.fields`, `.tab-pane`, `.object-infos`, `data-nestedmany` and `data-nestedone`.
+- **If you hooked the JavaScript**, `window.nestedFormEvents` and the jQuery `nested:fieldAdded` / `nested:fieldRemoved` events are replaced by `CustomEvent`s on `document`:
+
+  ```js
+  document.addEventListener("rails_admin.nested_field_added", (event) => {
+    const { field, association } = event.detail; // field is the new .fields element
+  });
+  document.addEventListener("rails_admin.nested_field_removed", (event) => {
+    const { field, group, destroyed } = event.detail; // destroyed: marked _destroy, not detached
+  });
+  ```
+
+  Both fire on the row and bubble, so a delegated listener on `document` still works. `nested_field_removed` fires while the row is still in the document.
+
+One association may now repeat at most `RailsAdmin::FormBuilder::MAX_NESTED_FORM_RECURSION` times down a chain of nested forms, so an association that can reach itself renders instead of hanging the request. A chain of distinct models stays unlimited however deep it runs.
+
 ## Smaller changes
 
 - **`sassc-rails`** is no longer required — the shipped CSS is plain.
