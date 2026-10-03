@@ -5,16 +5,16 @@
       <i class="fas"></i>
     </a>
     <% if field.inline_add %>
-      <%= form.link_to_add "<i class=\"fas fa-plus\"></i> #{wording_for(:link, :new, field.associated_model_config.abstract_model)}".html_safe, field.name, { class: 'btn btn-info', :'data-add-label' => "<i class=\"fas fa-plus\"></i> #{wording_for(:link, :new, field.associated_model_config.abstract_model)}".gsub("\n", "") } %>
+      <%= form.nested_add_button "<i class=\"fas fa-plus\"></i> #{wording_for(:link, :new, field.associated_model_config.abstract_model)}".html_safe, field, { class: 'btn btn-info', :'data-add-label' => "<i class=\"fas fa-plus\"></i> #{wording_for(:link, :new, field.associated_model_config.abstract_model)}".gsub("\n", "") } %>
     <% end %>
   </div>
   <%= form.errors_for(field) %>
   <%= form.help_for(field) %>
 </div>
 <div class="tab-content collapse">
-  <%= form.fields_for field.name do |nested_form| %>
-    <% if field.nested_form[:allow_destroy] %>
-      <%= nested_form.link_to_remove '<span class="btn btn-danger"><i class="fas fa-trash"></i></span>'.html_safe %>
+  <%= form.nested_fields_for field do |nested_form| %>
+    <% if field.nested_form[:allow_destroy] || nested_form.object.new_record? %>
+      <%= nested_form.remove_button '<span class="btn btn-danger"><i class="fas fa-trash"></i></span>'.html_safe %>
     <% end %>
     <%= nested_form.generate({action: :nested, model_config: field.associated_model_config, nested_in: field }) %>
   <% end %>

@@ -1,10 +1,7 @@
 # frozen_string_literal: true
 
-require 'nested_form/builder_mixin'
-
 module RailsAdmin
   class FormBuilder < ::ActionView::Helpers::FormBuilder
-    include ::NestedForm::BuilderMixin
     include ::RailsAdmin::ApplicationHelper
 
     def generate(options = {})
@@ -77,6 +74,47 @@ module RailsAdmin
       field.read_only? ? @template.content_tag(:div, field.pretty_value, class: 'form-control-static') : field.render
     end
 
+    # Rails' per-child hook; .fields is the node the JavaScript and the stylesheet work on.
+    def fields_for_nested_model(name, object, fields_options, block)
+      content = super
+      return content unless content
+
+      @template.content_tag :div, content, class: 'fields',
+                                           data: {'nested-new' => (true if object.new_record?)}
+    end
+
+    # The association's children, then an inert <template> for adding one more.
+    def nested_fields_for(field, &block)
+      # fields_for answers nil for a singular association with no child yet.
+      children = fields_for(field.name, &block) || ''.html_safe
+      children + (field.inline_add ? nested_template_for(field, &block) : ''.html_safe)
+    end
+
+    # Also emits the _destroy input the button drives.
+    def remove_button(label, html_options = {})
+      hidden_field(:_destroy, value: false) +
+        @template.content_tag(:button, label, nested_button_options(html_options, 'remove_nested_fields'))
+    end
+
+    # data-nested-add is what lets the JavaScript find the template from outside the control group.
+    def nested_add_button(label, field_or_name, html_options = {})
+      # A Field arrives wrapped in a Proxyable::Proxy, so ask what it is not.
+      name = field_or_name.is_a?(Symbol) || field_or_name.is_a?(String) ? field_or_name : field_or_name.name
+      options = nested_button_options(html_options, 'add_nested_fields')
+      options[:data] = (options[:data] || {}).merge('nested-add' => name)
+      @template.content_tag(:button, label, options)
+    end
+
+    def link_to_add(label, field_or_name, html_options = {})
+      RailsAdmin.deprecator.warn('FormBuilder#link_to_add is deprecated, please use #nested_add_button instead.')
+      nested_add_button(label, field_or_name, html_options)
+    end
+
+    def link_to_remove(label, html_options = {})
+      RailsAdmin.deprecator.warn('FormBuilder#link_to_remove is deprecated, please use #remove_button instead.')
+      remove_button(label, html_options)
+    end
+
     def object_infos
       model_config = RailsAdmin.config(object)
       model_label = model_config.label
@@ -116,6 +154,28 @@ module RailsAdmin
     end
 
   protected
+
+    def nested_template_for(field, &block)
+      # Tagged by depth, never by association name: a name-tagged placeholder is a
+      # prefix of the ones in the templates nested inside it.
+      index = ("new_#{nesting_depth + 1}_#{field.name}" if field.multiple?)
+      # Rails wraps a single record for a collection association by itself.
+      body = fields_for(field.name, field.associated_model_config.abstract_model.new,
+                        {child_index: index}.compact, &block)
+      @template.content_tag :template, body,
+                            data: {'nested-template' => field.name, 'nested-index' => index}.compact
+    end
+
+    def nesting_depth
+      @object_name.to_s.scan('_attributes]').size
+    end
+
+    def nested_button_options(html_options, css_class)
+      options = html_options.symbolize_keys
+      options[:type] ||= 'button'
+      options[:class] = [options[:class].presence, css_class].compact.join(' ')
+      options
+    end
 
     def generator_action(action, nested)
       if nested

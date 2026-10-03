@@ -4,6 +4,25 @@
 
 [Full Changelog](https://github.com/railsadminteam/rails_admin/compare/v4.0.0.beta...HEAD)
 
+### Changed
+
+- [BREAKING CHANGE] Nested forms no longer depend on the unmaintained `nested_form` gem. A nested association now renders an inert `<template>` inside its own control group instead of an HTML string in a page-global `data-blueprint` attribute after the form, and `RailsAdmin::FormBuilder` grows `#nested_fields_for`, `#nested_add_button` and `#remove_button` ([#3723](https://github.com/railsadminteam/rails_admin/issues/3723))
+- [BREAKING CHANGE] The add and remove controls of a nested form are `<button type="button">` rather than `<a href="javascript:void(0)">`, so they need no `javascript:` URL in the Content Security Policy; application CSS matching `a.add_nested_fields` or `a.remove_nested_fields` needs updating ([#3723](https://github.com/railsadminteam/rails_admin/issues/3723))
+- [BREAKING CHANGE] The jQuery events `nested:fieldAdded` and `nested:fieldRemoved` are replaced by the `rails_admin.nested_field_added` and `rails_admin.nested_field_removed` `CustomEvent`s, whose `detail` carries `{field, association}` and `{field, group, destroyed}` ([#3723](https://github.com/railsadminteam/rails_admin/issues/3723))
+
+### Deprecated
+
+- `RailsAdmin::FormBuilder#link_to_add` and `#link_to_remove`, which a custom `_form_nested_many` or `_form_nested_one` partial may call; use `#nested_add_button` and `#remove_button` ([#3723](https://github.com/railsadminteam/rails_admin/issues/3723))
+
+### Removed
+
+- [BREAKING CHANGE] `after_nested_form_callbacks`, `window.nestedFormEvents`, the `data-blueprint` / `data-blueprint-id` attributes and the `#<association>_fields_blueprint` elements ([#3723](https://github.com/railsadminteam/rails_admin/issues/3723))
+
+### Fixed
+
+- A nested form inside a modal no longer adds rows built from the form behind it, which named their inputs for the wrong model ([#3723](https://github.com/railsadminteam/rails_admin/issues/3723))
+- A row the user added can still be removed when the form comes back from a failed save and the association is configured with `allow_destroy: false` ([#3723](https://github.com/railsadminteam/rails_admin/issues/3723))
+
 ## [4.0.0.beta](https://github.com/railsadminteam/rails_admin/tree/v4.0.0.beta) - 2026-09-26
 
 [Full Changelog](https://github.com/railsadminteam/rails_admin/compare/v3.3.0...v4.0.0.beta)
