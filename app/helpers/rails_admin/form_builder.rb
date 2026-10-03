@@ -4,6 +4,10 @@ module RailsAdmin
   class FormBuilder < ::ActionView::Helpers::FormBuilder
     include ::RailsAdmin::ApplicationHelper
 
+    # Bounds a nested form for an association that can reach itself. Counting repeats
+    # of one association, rather than depth, leaves distinct models uncapped.
+    MAX_NESTED_FORM_RECURSION = 3
+
     def generate(options = {})
       without_field_error_proc_added_div do
         options.reverse_merge!(
@@ -87,7 +91,13 @@ module RailsAdmin
     def nested_fields_for(field, &block)
       # fields_for answers nil for a singular association with no child yet.
       children = fields_for(field.name, &block) || ''.html_safe
-      children + (field.inline_add ? nested_template_for(field, &block) : ''.html_safe)
+      children + (nested_add_allowed?(field) ? nested_template_for(field, &block) : ''.html_safe)
+    end
+
+    # The partials ask too, so an add button is never offered without a template.
+    def nested_add_allowed?(field)
+      !!field.inline_add &&
+        @object_name.to_s.scan("[#{field.name}_attributes]").size < MAX_NESTED_FORM_RECURSION
     end
 
     # Also emits the _destroy input the button drives.

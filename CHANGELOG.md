@@ -24,6 +24,7 @@
 
 - A nested form inside a modal no longer adds rows built from the form behind it, which named their inputs for the wrong model ([#3723](https://github.com/railsadminteam/rails_admin/issues/3723))
 - A row the user added can still be removed when the form comes back from a failed save and the association is configured with `allow_destroy: false` ([#3723](https://github.com/railsadminteam/rails_admin/issues/3723))
+- A nested form for an association that can reach itself — Mongoid's `recursively_embeds_many` / `recursively_embeds_one`, or a self-referential `has_many` with `accepts_nested_attributes_for` — renders instead of hanging the request. One association may now repeat at most `RailsAdmin::FormBuilder::MAX_NESTED_FORM_RECURSION` times down a chain of nested forms; a chain of distinct models stays unlimited ([#3723](https://github.com/railsadminteam/rails_admin/issues/3723))
 
 ## [4.0.0.beta](https://github.com/railsadminteam/rails_admin/tree/v4.0.0.beta) - 2026-09-26
 
