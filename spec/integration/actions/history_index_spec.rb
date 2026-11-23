@@ -37,6 +37,14 @@ RSpec.describe 'HistoryIndex action', type: :request, active_record: true do
     is_expected.to have_css('th.item.headerSortDown')
   end
 
+  it 'keeps the sort and drops the page on search' do
+    visit history_index_path(model_name: 'paper_trail_test', sort: 'item', sort_reverse: 'true', page: 2)
+    fill_in 'query', with: 'update'
+    click_button 'Refresh'
+    expect(page).to have_current_path(/query=update/)
+    expect(Rack::Utils.parse_query(URI.parse(current_url).query)).to eq('query' => 'update', 'sort' => 'item', 'sort_reverse' => 'true')
+  end
+
   context "when Kaminari's custom param_name is set" do
     before { Kaminari.config.param_name = :pagina }
     after { Kaminari.config.param_name = :page }
